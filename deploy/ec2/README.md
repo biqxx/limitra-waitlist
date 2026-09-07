@@ -50,7 +50,7 @@ Clone the app repository first so the versioned platform templates are present:
 ```bash
 sudo mkdir -p /opt/apps /opt/platform
 sudo chown -R "$USER":"$USER" /opt/apps /opt/platform
-git clone https://github.com/mindset001/limitra-waitlist.git /opt/apps/limitra-waitlist
+git clone https://github.com/biqxx/limitra-waitlist.git /opt/apps/limitra-waitlist
 cp -a /opt/apps/limitra-waitlist/deploy/ec2/platform/. /opt/platform/
 cd /opt/platform
 cp .env.example .env
@@ -91,14 +91,26 @@ chmod 600 .env.production
 ```
 
 Edit `.env.production`, replace `CHANGE_ME`, and keep `DATABASE_SSL=false` for
-the private Docker network. Build the images, apply migrations as a one-shot
-task, and start the app:
+the private Docker network.
+
+The production Compose file does not build source code on EC2. It pulls these
+multi-architecture images from GitHub Container Registry by default:
+
+- `ghcr.io/biqxx/limitra-waitlist:main`
+- `ghcr.io/biqxx/limitra-waitlist:migration-main`
+
+Make the container package public in its GitHub package settings, or log the
+server into GHCR with a token that has `read:packages`:
 
 ```bash
-docker compose -f compose.production.yml build --pull
-docker compose -f compose.production.yml --profile tools run --rm migrate
-docker compose -f compose.production.yml up -d
-docker compose -f compose.production.yml ps
+echo "$GHCR_TOKEN" | docker login ghcr.io -u biqxx --password-stdin
+```
+
+Pull the images, apply migrations as a one-shot task, and start the app:
+
+```bash
+chmod +x deploy/ec2/deploy-waitlist.sh
+./deploy/ec2/deploy-waitlist.sh
 docker compose -f compose.production.yml logs --tail=100 app
 ```
 
@@ -120,22 +132,69 @@ Point the domain's DNS record at the ALB or EC2 public IP. Verify
 `http://waitlist.your-domain.com/api/health`; it should report both the app and
 database as healthy.
 
-## 4. Pull and redeploy an update
+## 4. Build and publish images
+
+### GitHub Actions (recommended)
+
+Every push to `main` runs `.github/workflows/publish-images.yml`. It builds
+`linux/amd64` and `linux/arm64` runtime and migration images, then publishes
+branch and immutable commit tags to GHCR. No long-lived registry credential is
+needed in GitHub because the workflow uses the repository's `GITHUB_TOKEN`.
+
+After the workflow succeeds, deploy the new `main` images on EC2:
 
 ```bash
 cd /opt/apps/limitra-waitlist
 git pull --ff-only
-docker compose -f compose.production.yml build --pull
-docker compose -f compose.production.yml --profile tools run --rm migrate
-docker compose -f compose.production.yml up -d --remove-orphans
+./deploy/ec2/deploy-waitlist.sh
+```
+
+For a rollback or controlled release, pin both images from the same commit in
+the shell or in `/opt/apps/limitra-waitlist/.env`:
+
+```bash
+LIMITRA_IMAGE=ghcr.io/biqxx/limitra-waitlist:sha-0123456
+LIMITRA_MIGRATION_IMAGE=ghcr.io/biqxx/limitra-waitlist:migration-sha-0123456
+export LIMITRA_IMAGE LIMITRA_MIGRATION_IMAGE
+./deploy/ec2/deploy-waitlist.sh
+```
+
+### Build locally and transfer directly
+
+If you do not want to use a registry, build both images on a machine with
+Docker. The target platform must match the EC2 instance (`linux/amd64` for most
+Intel/AMD instances or `linux/arm64` for Graviton):
+
+```bash
+docker compose -f compose.production.yml -f compose.build.yml build --pull
+docker save -o waitlist-images.tar \
+  limitra-waitlist:local limitra-waitlist-migration:local
+scp waitlist-images.tar ubuntu@YOUR_EC2_HOST:/tmp/waitlist-images.tar
+ssh ubuntu@YOUR_EC2_HOST \
+  'docker load -i /tmp/waitlist-images.tar && rm /tmp/waitlist-images.tar'
+```
+
+Then deploy the loaded local images on EC2:
+
+```bash
+cd /opt/apps/limitra-waitlist
+export LIMITRA_IMAGE=limitra-waitlist:local
+export LIMITRA_MIGRATION_IMAGE=limitra-waitlist-migration:local
+./deploy/ec2/deploy-waitlist.sh
+```
+
+## 5. Pull and redeploy an update
+
+```bash
+cd /opt/apps/limitra-waitlist
+git pull --ff-only
+./deploy/ec2/deploy-waitlist.sh
 docker image prune -f
 ```
 
-For CI-built images, set `LIMITRA_IMAGE` before `docker compose pull` and
-`docker compose up -d --no-build`. Pin immutable release tags or digests rather
-than deploying `latest`.
+Pin immutable release tags or digests rather than deploying `latest`.
 
-## 5. Add another application
+## 6. Add another application
 
 Give each app its own directory and Compose project. Do not publish its HTTP or
 database ports. Join `platform_edge` for Nginx access and `platform_data` only

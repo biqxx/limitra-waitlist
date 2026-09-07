@@ -2,11 +2,7 @@ name: limitra-waitlist
 
 services:
   migrate:
-    image: ${LIMITRA_MIGRATION_IMAGE:-limitra-waitlist-migration:local}
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: migration
+    image: ${LIMITRA_MIGRATION_IMAGE:-ghcr.io/biqxx/limitra-waitlist:migration-main}
     profiles:
       - tools
     env_file:
@@ -19,10 +15,7 @@ services:
       - ALL
 
   app:
-    image: ${LIMITRA_IMAGE:-limitra-waitlist:local}
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ${LIMITRA_IMAGE:-ghcr.io/biqxx/limitra-waitlist:main}
     restart: unless-stopped
     env_file:
       - .env.production
