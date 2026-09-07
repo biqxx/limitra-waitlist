@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
 
 const Logo = () => (
   <div className="footer-logo" style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -112,9 +111,9 @@ export default function Terms() {
           </div>
           <div className="footer-navs">
             <p><Link href="/">Home</Link></p>
-            <p><a href="/#">Guide</a></p>
-            <p><a href="/#about">About</a></p>
-            <p><a href="/#faq">FAQ</a></p>
+            <p><Link href="/#">Guide</Link></p>
+            <p><Link href="/#about">About</Link></p>
+            <p><Link href="/#faq">FAQ</Link></p>
           </div>
         </div>
       </footer>
