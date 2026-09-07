@@ -12,6 +12,7 @@ FROM node:22-bookworm-slim AS build
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=dependencies /app/node_modules ./node_modules
+COPY --from=dependencies /app/src/generated ./src/generated
 COPY . .
 RUN npm run build
 
