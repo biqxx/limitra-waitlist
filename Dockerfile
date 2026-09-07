@@ -3,6 +3,9 @@
 FROM node:22-bookworm-slim AS dependencies
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates openssl \
+    && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./
@@ -28,7 +31,7 @@ ENV NODE_ENV=production \
     PORT=3000
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates dumb-init \
+    && apt-get install -y --no-install-recommends ca-certificates dumb-init openssl \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build --chown=node:node /app/.next/standalone ./

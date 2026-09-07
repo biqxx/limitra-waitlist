@@ -215,3 +215,40 @@ logical database numbers are not a security boundary.
   commit them, and rotate credentials periodically.
 - Patch the EC2 OS and rebuild images regularly. Use immutable image tags for
   rollback.
+
+## Troubleshooting database authentication
+
+Prisma error `P1000` means the app reached PostgreSQL but PostgreSQL rejected
+the supplied username/password. This commonly happens when
+`LIMITRA_DB_PASSWORD` is changed after the PostgreSQL volume was initialized:
+Docker's initialization scripts run only when the data directory is empty.
+
+Choose one hexadecimal password (hex avoids URL-encoding problems) and put the
+same value in both places:
+
+- `/opt/platform/.env` as `LIMITRA_DB_PASSWORD`.
+- `/opt/apps/limitra-waitlist/.env.production` inside `DATABASE_URL`.
+
+Then copy the current idempotent database setup script into the platform,
+recreate only the PostgreSQL container so it receives the updated environment,
+and run the script manually. This preserves the PostgreSQL volume and data:
+
+```bash
+cd /opt/apps/limitra-waitlist
+git pull --ff-only
+cp deploy/ec2/platform/postgres/init/10-limitra-db.sh \
+  /opt/platform/postgres/init/10-limitra-db.sh
+chmod +x /opt/platform/postgres/init/10-limitra-db.sh
+
+cd /opt/platform
+docker compose up -d postgres
+docker compose exec -T postgres \
+  sh /docker-entrypoint-initdb.d/10-limitra-db.sh
+
+cd /opt/apps/limitra-waitlist
+./deploy/ec2/deploy-waitlist.sh
+```
+
+The setup script creates the role/database when absent and synchronizes the
+existing role's password when they already exist. Do not delete
+`postgres_data` to fix credentials.
