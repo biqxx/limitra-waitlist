@@ -4,7 +4,11 @@ server {
 
     set $limitra_upstream http://limitra-waitlist:3000;
 
-    location = /api/waitlist {
+    location = /waitlist {
+        return 308 /waitlist/;
+    }
+
+    location = /waitlist/api/waitlist {
         limit_req zone=signup_api burst=5 nodelay;
         proxy_pass $limitra_upstream;
         proxy_http_version 1.1;
@@ -15,7 +19,7 @@ server {
         proxy_set_header X-Forwarded-Host $host;
     }
 
-    location / {
+    location /waitlist/ {
         proxy_pass $limitra_upstream;
         proxy_http_version 1.1;
         proxy_set_header Host $host;

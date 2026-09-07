@@ -93,6 +93,10 @@ chmod 600 .env.production
 Edit `.env.production`, replace `CHANGE_ME`, and keep `DATABASE_SSL=false` for
 the private Docker network.
 
+The production image is built with the Next.js base path `/waitlist`. This is a
+build-time setting, so the app, API, health endpoint, and static assets are all
+served below that prefix.
+
 The production Compose file does not build source code on EC2. It pulls these
 multi-architecture images from GitHub Container Registry by default:
 
@@ -118,19 +122,26 @@ The `migrate` profile runs `prisma migrate deploy` and exits. The application is
 the only persistent service in this Compose project, and the Prisma CLI is not
 included in its production image.
 
-Enable its Nginx route:
+Until a domain is available, install the default IP-based Nginx route:
 
 ```bash
+cd /opt/apps/limitra-waitlist
+cp deploy/ec2/platform/nginx/conf.d/00-default.conf \
+  /opt/platform/nginx/conf.d/00-default.conf
+
 cd /opt/platform
-cp nginx/conf.d/10-limitra.conf.example nginx/conf.d/10-limitra.conf
-sed -i 's/waitlist.example.com/waitlist.your-domain.com/' nginx/conf.d/10-limitra.conf
 docker compose exec nginx nginx -t
 docker compose exec nginx nginx -s reload
 ```
 
-Point the domain's DNS record at the ALB or EC2 public IP. Verify
-`http://waitlist.your-domain.com/api/health`; it should report both the app and
-database as healthy.
+Verify `http://YOUR_SERVER_IP/waitlist/api/health`; it should report both the
+app and database as healthy. The landing page is available at
+`http://YOUR_SERVER_IP/waitlist/`.
+
+When a domain becomes available, copy `10-limitra.conf.example` to
+`10-limitra.conf`, replace its example hostname, and reload Nginx. This image
+will continue to use `/waitlist`; serving it at the domain root requires a new
+image built with an empty `NEXT_PUBLIC_BASE_PATH`.
 
 ## 4. Build and publish images
 

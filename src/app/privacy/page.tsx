@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { withBasePath } from "@/lib/base-path";
 
 const Logo = () => (
   <div className="footer-logo" style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
     <Link href="/">
-      <img src="/assets/images/logo2.png" alt="Limitra Logo" style={{ height: 'clamp(32px, 8vw, 48px)', width: 'auto' }} />
+      <img src={withBasePath("/assets/images/logo2.png")} alt="Limitra Logo" style={{ height: 'clamp(32px, 8vw, 48px)', width: 'auto' }} />
     </Link>
   </div>
 );

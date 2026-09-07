@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { message } from "antd";
+import { withBasePath } from "@/lib/base-path";
 
 const Logo = () => (
   <div className="footer-logo" style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
-    <img src="/assets/images/logo2.png" alt="Limitra Logo" style={{ height: 'clamp(32px, 8vw, 48px)', width: 'auto' }} />
+    <img src={withBasePath("/assets/images/logo2.png")} alt="Limitra Logo" style={{ height: 'clamp(32px, 8vw, 48px)', width: 'auto' }} />
   </div>
 );
 
@@ -57,7 +58,7 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/waitlist', {
+      const response = await fetch(withBasePath('/api/waitlist'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

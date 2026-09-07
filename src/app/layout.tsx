@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Open_Sans } from "next/font/google";
 import "./globals.css";
+import { withBasePath } from "@/lib/base-path";
 
 const openSans = Open_Sans({
   variable: "--font-open-sans",
@@ -18,7 +19,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${openSans.variable}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${openSans.variable}`}
+      suppressHydrationWarning
+      style={{
+        "--hero-pattern-image": `url("${withBasePath('/assets/images/herobg.png')}")`,
+      } as React.CSSProperties}
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{

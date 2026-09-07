@@ -127,7 +127,7 @@ button {
   height: 100%;
   opacity: 0.05;
   pointer-events: none;
-  background-image: url("/assets/images/herobg.png");
+  background-image: var(--hero-pattern-image);
   background-size: cover;
   background-position: center;
 }
@@ -715,7 +715,7 @@ button {
   height: 100%;
   opacity: 0.05;
   pointer-events: none;
-  background-image: url("/assets/images/herobg.png");
+  background-image: var(--hero-pattern-image);
   background-size: cover;
   background-position: center;
 }
