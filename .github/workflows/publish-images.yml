@@ -84,3 +84,20 @@ jobs:
           labels: ${{ steps.migration_meta.outputs.labels }}
           cache-from: type=gha,scope=migration
           cache-to: type=gha,mode=max,scope=migration
+
+      - name: Export deployment images
+        shell: bash
+        run: |
+          runtime_image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/limitra-waitlist:main"
+          migration_image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/limitra-waitlist:migration-main"
+          docker pull --platform linux/amd64 "$runtime_image"
+          docker pull --platform linux/amd64 "$migration_image"
+          docker save "$runtime_image" "$migration_image" | gzip -1 > limitra-waitlist-images.tar.gz
+
+      - name: Upload deployment images
+        uses: actions/upload-artifact@v4
+        with:
+          name: limitra-waitlist-images
+          path: limitra-waitlist-images.tar.gz
+          retention-days: 1
+          if-no-files-found: error
