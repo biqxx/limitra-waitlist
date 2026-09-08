@@ -136,7 +136,7 @@ docker compose exec nginx nginx -s reload
 
 Verify `http://YOUR_SERVER_IP/waitlist/api/health`; it should report both the
 app and database as healthy. The landing page is available at
-`http://YOUR_SERVER_IP/waitlist/`.
+`http://YOUR_SERVER_IP/waitlist`.
 
 When a domain becomes available, copy `10-limitra.conf.example` to
 `10-limitra.conf`, replace its example hostname, and reload Nginx. This image
