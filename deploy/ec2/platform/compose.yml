@@ -59,6 +59,7 @@ services:
 
   redis:
     image: redis:7.4-alpine
+    user: redis
     restart: unless-stopped
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
